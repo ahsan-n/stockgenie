@@ -6,12 +6,18 @@ from pydantic import BaseModel, Field
 from datetime import datetime
 from typing import Optional
 import os
+import logging
 
-# Import mock data
+# Import mock data (fallback)
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 from mocks.stocks import get_mock_index
 
+# Import real data services
+from app.services.psx_scraper import get_psx_scraper
+from app.services.cache_service import get_cache_service
+
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/index", tags=["Index"])
 
 
@@ -47,20 +53,64 @@ async def get_index():
     - 52-week range and YTD performance
     - Trading status and constituent count
     
+    **Data Source:** PSX Data Portal (dps.psx.com.pk)  
+    **Cache:** 5 minutes  
+    **Fallback:** Mock data if PSX unavailable
+    
     **Example:**
     ```bash
     curl http://localhost:8000/api/v1/index | jq
     ```
     """
     try:
-        # Get mock data (will be replaced with real data later)
-        index_data = get_mock_index()
-        return IndexResponse(**index_data)
+        cache = get_cache_service()
+        scraper = get_psx_scraper()
+        
+        # Try to get from cache first
+        cache_key = "kse100:current"
+        cached_data = cache.get(cache_key)
+        
+        if cached_data:
+            logger.info("✅ Returning cached KSE100 data")
+            return IndexResponse(**cached_data)
+        
+        # Fetch from PSX
+        logger.info("📊 Fetching fresh KSE100 data from PSX...")
+        real_data = scraper.fetch_kse100_data()
+        
+        if real_data:
+            # Ensure all required fields are present
+            # Add missing fields with sensible defaults
+            if 'open' not in real_data:
+                real_data['open'] = real_data.get('previous_close', real_data['value'])
+            if 'market_cap' not in real_data:
+                real_data['market_cap'] = 8547000000000  # Approximate
+            if 'constituent_count' not in real_data:
+                real_data['constituent_count'] = 100
+            if 'average_volume_30d' not in real_data:
+                real_data['average_volume_30d'] = real_data.get('volume')
+            
+            # Cache for 5 minutes (300 seconds)
+            cache.set(cache_key, real_data, ttl_seconds=300)
+            logger.info(f"✅ Fetched real KSE100 data: {real_data['value']}")
+            return IndexResponse(**real_data)
+        
+        # Fallback to mock data if PSX fetch fails
+        logger.warning("⚠️ PSX data unavailable, using mock data")
+        mock_data = get_mock_index()
+        return IndexResponse(**mock_data)
+        
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to fetch index data: {str(e)}"
-        )
+        logger.error(f"Error in get_index: {e}", exc_info=True)
+        # Last resort: return mock data
+        try:
+            mock_data = get_mock_index()
+            return IndexResponse(**mock_data)
+        except:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to fetch index data: {str(e)}"
+            )
 
 
 @router.get("/historical", summary="Get Historical Index Data")
