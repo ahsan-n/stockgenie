@@ -1,0 +1,43 @@
+# Cursor-specific ignore patterns
+# These files/directories will be ignored by Cursor AI
+
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+venv/
+.venv/
+env/
+
+# Build outputs
+.next/
+dist/
+build/
+out/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+pgdata/
+
+# Logs
+logs/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+
+# Data files (large files)
+data/raw/*.pdf
+data/processed/*.csv
+data/embeddings/*.bin
+
+# Docker
+docker-compose.override.yml
+
