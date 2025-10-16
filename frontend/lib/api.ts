@@ -35,6 +35,34 @@ export interface IndexData {
   average_volume_30d?: number;
 }
 
+export interface SectorData {
+  id: number;
+  name: string;
+  market_cap: number;
+  weight_percent: number;
+  companies_count: number;
+  day_change_percent: number;
+  avg_pe_ratio: number;
+  color: string;
+}
+
+export interface CompanyData {
+  rank: number;
+  symbol: string;
+  name: string;
+  sector: string;
+  price: number;
+  change: number;
+  change_percent: number;
+  market_cap: number;
+  pe_ratio: number;
+  dividend_yield: number;
+  eps: number;
+  volume: number;
+  year_high: number;
+  year_low: number;
+}
+
 // API functions
 export const indexApi = {
   /**
@@ -42,6 +70,26 @@ export const indexApi = {
    */
   getIndex: async (): Promise<IndexData> => {
     const response = await api.get<IndexData>('/api/v1/index/');
+    return response.data;
+  },
+};
+
+export const sectorsApi = {
+  /**
+   * Get all sectors
+   */
+  getSectors: async (): Promise<SectorData[]> => {
+    const response = await api.get<SectorData[]>('/api/v1/sectors/');
+    return response.data;
+  },
+};
+
+export const companiesApi = {
+  /**
+   * Get top companies
+   */
+  getTopCompanies: async (limit: number = 30): Promise<CompanyData[]> => {
+    const response = await api.get<CompanyData[]>(`/api/v1/companies/top?limit=${limit}`);
     return response.data;
   },
 };

@@ -57,7 +57,12 @@ async def health_check():
 
 # Include routers
 from app.api.v1.index import router as index_router
+from app.api.v1.sectors import router as sectors_router
+from app.api.v1.companies import router as companies_router
+
 app.include_router(index_router, prefix="/api/v1")
+app.include_router(sectors_router, prefix="/api/v1")
+app.include_router(companies_router, prefix="/api/v1")
 
 
 @app.get("/api/v1/ping")
