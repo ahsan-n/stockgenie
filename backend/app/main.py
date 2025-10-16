@@ -55,6 +55,11 @@ async def health_check():
     }
 
 
+# Include routers
+from app.api.v1.index import router as index_router
+app.include_router(index_router, prefix="/api/v1")
+
+
 @app.get("/api/v1/ping")
 async def ping():
     """Simple ping endpoint"""

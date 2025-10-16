@@ -280,7 +280,28 @@ MOCK_COMPANY_DETAILS = {
 
 def get_mock_index() -> Dict:
     """Get mock KSE100 index data"""
-    return MOCK_KSE100_INDEX
+    from datetime import datetime
+    
+    # Calculate derived values
+    previous_close = MOCK_KSE100_INDEX["value"] - MOCK_KSE100_INDEX["change"]
+    
+    # Enhanced index data with all required fields
+    enhanced_data = {
+        **MOCK_KSE100_INDEX,
+        "name": "Karachi Stock Exchange 100 Index",
+        "previous_close": round(previous_close, 2),
+        "open": 94950.20,
+        "high": 95450.75,
+        "low": 94875.30,
+        "year_high": 97500.00,
+        "year_low": 88250.00,
+        "ytd_change_percent": 12.5,
+        "constituent_count": 100,
+        "trading_status": "closed",  # Market closed at time of data
+        "average_volume_30d": 235_000_000,
+    }
+    
+    return enhanced_data
 
 
 def get_mock_sectors() -> List[Dict]:
