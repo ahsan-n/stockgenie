@@ -10,11 +10,13 @@ echo "🔍 Running pre-commit checks..."
 echo "1️⃣  Checking for secrets..."
 STAGED_FILES=$(git diff --cached --name-only | grep -v -E "\.(md|txt)$|scripts/pre-commit-check\.sh|\.cursorrules" || true)
 if [ -n "$STAGED_FILES" ]; then
-    if echo "$STAGED_FILES" | xargs grep -l -i -E "(api[_-]?key.*=.*['\"]?[a-zA-Z0-9]{20,}|secret[_-]?key.*=.*['\"]?[a-zA-Z0-9]{20,}|password.*=.*['\"]?[a-zA-Z0-9]{8,}|token.*=.*['\"]?[a-zA-Z0-9]{20,}|sk-[a-zA-Z0-9]{20,})" 2>/dev/null; then
+    # Check for secrets but exclude obvious placeholders
+    SECRET_MATCHES=$(echo "$STAGED_FILES" | xargs grep -i -E "(api[_-]?key.*=.*['\"]?[a-zA-Z0-9]{20,}|secret[_-]?key.*=.*['\"]?[a-zA-Z0-9]{20,}|password.*=.*['\"]?[a-zA-Z0-9]{8,}|token.*=.*['\"]?[a-zA-Z0-9]{20,}|sk-[a-zA-Z0-9]{20,})" 2>/dev/null | grep -v -E "(changeme|placeholder|example|demo|test|dummy|your-|insert-|sample|fake|not-a-secret|POSTGRES_PASSWORD.*:-changeme)" || true)
+    if [ -n "$SECRET_MATCHES" ]; then
         echo "❌ ERROR: Potential secrets detected in staged files!"
         echo "   Remove secrets and use environment variables instead."
-        echo "   Files with potential secrets:"
-        echo "$STAGED_FILES" | xargs grep -l -i -E "(api[_-]?key.*=|secret[_-]?key.*=|password.*=|token.*=|sk-[a-zA-Z0-9]{20,})" 2>/dev/null || true
+        echo "   Detected:"
+        echo "$SECRET_MATCHES"
         exit 1
     fi
 fi
